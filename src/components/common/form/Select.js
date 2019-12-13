@@ -51,6 +51,7 @@ export const InformedReactSelect = ({
           inputId={field}
           isClearable={true}
           value={matchedOption}
+          className={classes.selectComponent}
           onChange={option => {
             // TODO this won't be correct. We need to consult docs to get array of values
             setValue(option && option.value);
