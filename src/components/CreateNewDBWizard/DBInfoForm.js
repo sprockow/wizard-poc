@@ -8,13 +8,17 @@ import Select from '../common/form/Select';
 import RadioGroup from '../common/form/RadioGroup';
 import { Button, FormControlLabel, Radio } from '@material-ui/core';
 
-function DBInfoForm({ classes = {} }) {
+function DBInfoForm({ navigateToNextStep, classes = {} }) {
   return (
     <Form
       noValidate
       autoComplete="off"
       className={classes.form}
-      onSubmit={data => {}}
+      onSubmit={formState => {
+        //TODO dispatch redux action
+
+        navigateToNextStep && navigateToNextStep();
+      }}
     >
       <div className={classes.firstSection}>
         <RadioGroup

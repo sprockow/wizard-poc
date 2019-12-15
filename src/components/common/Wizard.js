@@ -1,9 +1,8 @@
 import React from 'react';
-import { Router, Match, Redirect } from '@reach/router';
-import { Button } from '@material-ui/core';
+import { Router, Match, Redirect, Link as ReachLink } from '@reach/router';
 
 /* This is a utility function that will ignore react fragments (ie <></>) in order to get the "real" children */
-function recursivelyGetChildren(children) {
+function _recursivelyGetChildren(children) {
   let steps = [];
 
   const immmediateChildren = React.Children.toArray(children);
@@ -11,7 +10,7 @@ function recursivelyGetChildren(children) {
     if (immediateChild.type === React.Fragment) {
       steps = [
         ...steps,
-        ...recursivelyGetChildren(immediateChild.props.children),
+        ..._recursivelyGetChildren(immediateChild.props.children),
       ];
       continue;
     }
@@ -23,21 +22,51 @@ function recursivelyGetChildren(children) {
 }
 
 function WizardContainer({ children, classes = {} }) {
-  return <>{children}</>;
+  return <div>{children}</div>;
 }
 
-function WizardStepContainer({ step, steps, classes = {} }) {
-  return <>{step.props.children}</>;
+function WizardStepContainer({
+  step,
+  steps,
+  basePath,
+  navigate,
+  classes = {},
+}) {
+  const currentIndex = steps.indexOf(step);
+
+  let navigateToNextStep;
+  let NextStepLink;
+  if (currentIndex < steps.length - 1) {
+    navigateToNextStep = () =>
+      navigate(`${basePath}/${steps[currentIndex + 1].props.path}/`);
+  }
+
+  let navigateToPreviousStep;
+  if (currentIndex > 0) {
+    navigateToPreviousStep = () => {
+      navigate(`${basePath}/${steps[currentIndex - 1].props.path}/`);
+    };
+  }
+
+  return (
+    <>
+      {step.props.children({
+        navigateToPreviousStep,
+        navigateToNextStep,
+        NextStepLink,
+      })}
+    </>
+  );
 }
 
 export const WizardStep = ({ children }) => children;
 
 export function Wizard({ children }) {
-  const steps = recursivelyGetChildren(children);
+  const steps = _recursivelyGetChildren(children);
 
   return (
     <Match path="./*">
-      {({ match }) => (
+      {({ match, navigate }) => (
         <Router>
           <WizardContainer path="/">
             {steps.map(step => (
@@ -45,10 +74,12 @@ export function Wizard({ children }) {
                 path={step.props.path}
                 key={step.props.path}
                 step={step}
+                steps={steps}
+                basePath={match.uri}
+                navigate={navigate}
               />
             ))}
             <Redirect
-              default
               from="/"
               to={`${match.uri}/${steps[0].props.path}`}
               noThrow

@@ -1,6 +1,8 @@
 import React from 'react';
 import { withStyles } from '@material-ui/styles';
 import DBInfoForm from './DBInfoForm';
+import DBSampleData from './DBSampleData';
+
 import { Wizard, WizardStep } from '../common/Wizard';
 
 function CreateNewDBWizard({ path, children }) {
@@ -8,13 +10,13 @@ function CreateNewDBWizard({ path, children }) {
     <>
       <Wizard>
         <WizardStep path="first">
-          <DBInfoForm />
+          {wizardProps => <DBInfoForm {...wizardProps} />}
         </WizardStep>
         <WizardStep path="second">
-          <h1>2nd Step</h1>
+          {wizardProps => <DBSampleData {...wizardProps} />}
         </WizardStep>
         <WizardStep path="third">
-          <h1>3rd Step</h1>
+          {({ previousStepPath, nextStepPath }) => <h1>3rd Step</h1>}
         </WizardStep>
       </Wizard>
     </>
