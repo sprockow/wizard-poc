@@ -5,15 +5,15 @@ import DBSampleData from './DBSampleData';
 
 import { Wizard, WizardStep } from '../common/Wizard';
 
-function CreateNewDBWizard({ path, children }) {
+function CreateNewDBWizard({ path, children, clientId, ...otherProps }) {
   return (
     <>
       <Wizard>
         <WizardStep path="first">
-          {wizardProps => <DBInfoForm {...wizardProps} />}
+          {wizardProps => <DBInfoForm clientId={clientId} {...wizardProps} />}
         </WizardStep>
         <WizardStep path="second">
-          {wizardProps => <DBSampleData {...wizardProps} />}
+          {wizardProps => <DBSampleData clientId={clientId} {...wizardProps} />}
         </WizardStep>
         <WizardStep path="third">
           {({ previousStepPath, nextStepPath }) => <h1>3rd Step</h1>}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Form } from 'informed';
 import { withStyles } from '@material-ui/styles';
@@ -6,130 +6,266 @@ import { withStyles } from '@material-ui/styles';
 import TextField from '../common/form/TextField';
 import Select from '../common/form/Select';
 import RadioGroup from '../common/form/RadioGroup';
+import Slider from '../common/form/Slider';
 import { Button, FormControlLabel, Radio } from '@material-ui/core';
 
-function DBInfoForm({ navigateToNextStep, classes = {} }) {
+import { connect } from 'react-redux';
+
+import databaseSlice from '../../redux-store/database';
+
+const databaseTiers = [
+  {
+    id: 'developer',
+    title: 'Developer',
+    description: 'low-cost development option with 25 GB storage.',
+    size: '25',
+    minCapacity: 1,
+    maxCapacity: 4,
+  },
+  {
+    id: 'startup',
+    title: 'Startup',
+    description:
+      'starter configuration for development and light production workloads.',
+    size: '50',
+    minCapacity: 2,
+    maxCapacity: 8,
+  },
+  {
+    id: 'standard',
+    title: 'Standard',
+    description:
+      'higher throughput, lower latency, 99.9% uptime SLA, plus support',
+    size: '50',
+    minCapacity: 4,
+    maxCapacity: 12,
+  },
+  {
+    id: 'enterprise',
+    title: 'Enterprise',
+    description:
+      'highest throughput, lowest latency, 99.99% uptime SLA, and best support tier.',
+    size: '50',
+    minCapacity: 10,
+    maxCapacity: 24,
+  },
+];
+
+function DBInfoForm({
+  navigateToNextStep,
+  existingDB,
+  create,
+  update,
+  classes = {},
+}) {
+  const [selectedDatabaseTier, selectDatabaseTier] = useState(
+    existingDB &&
+      databaseTiers.find(tier => tier.id === existingDB.db_instance_type),
+  );
+
   return (
     <Form
       noValidate
       autoComplete="off"
       className={classes.form}
       onSubmit={formState => {
-        //TODO dispatch redux action
-
+        if (existingDB) {
+          update(formState);
+        } else {
+          create(formState);
+        }
         navigateToNextStep && navigateToNextStep();
       }}
+      initialValues={existingDB}
     >
-      <div className={classes.firstSection}>
-        <RadioGroup
-          field="db_instance_type"
-          label="DB Instance Type"
-          required
-          className={classes.dbInstanceRadioGroup}
-        >
-          <FormControlLabel
-            value="developer"
-            control={<Radio />}
-            label="Developer: low-cost development option with 25 GB storage."
-          />
-          <FormControlLabel
-            value="startup"
-            control={<Radio />}
-            label="Startup: starter configuration for development and light production workloads."
-          />
-          <FormControlLabel
-            value="standard"
-            control={<Radio />}
-            label="Standard: higher throughput, lower latency, 99.9% uptime SLA, plus support."
-          />
-          <FormControlLabel
-            value="enterprise"
-            control={<Radio />}
-            label="Enterprise: highest throughput, lowest latency, 99.99% uptime SLA, and best support tier."
-          />
-        </RadioGroup>
-        <Select
-          field="location"
-          label="Location"
-          inputId="component-select"
-          isClearable={true}
-          required
-          className={classes.location}
-          classes={classes}
-          options={[
-            {
-              label: 'us-east-1',
-              value: 'us-east-1',
-            },
-            {
-              label: 'europe-west-1',
-              value: 'europe-west-1',
-            },
-          ]}
-          helperText="Select a location for your database"
-        />
-      </div>
+      {({ formState }) => {
+        const validateExists = value => {
+          return !value ? 'Value required' : undefined;
+        };
+        const validatePasswords = value => {
+          if (!value) {
+            return 'Value required';
+          }
 
-      <div className={classes.secondSection}>
-        <TextField
-          className={classes.textfield}
-          classes={classes}
-          label="Database Name"
-          field="name"
-          id="name"
-          helperText="The database name must be unique within your account"
-        />
-        <TextField
-          className={classes.textfield}
-          classes={classes}
-          label="Keyspace Name"
-          required
-          field="keyspace"
-          id="keyspace"
-          helperText="The keyspace holds your data"
-        />
+          return formState.values.password !== formState.values.password_confirm
+            ? 'Please check that password fields match'
+            : undefined;
+        };
 
-        <TextField
-          className={classes.textfield}
-          classes={classes}
-          label="Database User Name"
-          required
-          field="username"
-          id="username"
-          helperText="Create a database user"
-        />
+        return (
+          <>
+            <div className={classes.firstSection}>
+              <RadioGroup
+                field="db_instance_type"
+                label="DB Instance Type"
+                required
+                className={classes.dbInstanceRadioGroup}
+                onChange={e => {
+                  selectDatabaseTier(
+                    databaseTiers.find(tier => tier.id === e.target.value),
+                  );
+                }}
+                validate={validateExists}
+              >
+                {databaseTiers.map(tier => (
+                  <FormControlLabel
+                    key={tier.id}
+                    value={tier.id}
+                    control={<Radio />}
+                    label={`${tier.title} - ${tier.description}`}
+                  />
+                ))}
+              </RadioGroup>
+              {selectedDatabaseTier ? (
+                <>
+                  <Select
+                    field="location"
+                    label="Location"
+                    inputId="component-select"
+                    isClearable={true}
+                    required
+                    className={classes.location}
+                    classes={classes}
+                    options={[
+                      {
+                        label: 'us-east-1',
+                        value: 'us-east-1',
+                      },
+                      {
+                        label: 'europe-west-1',
+                        value: 'europe-west-1',
+                      },
+                    ]}
+                    helperText="Select a location for your database"
+                    validate={validateExists}
+                  />
+                  <Slider
+                    field="read_units"
+                    label="Read Capacity"
+                    key={`${selectedDatabaseTier.id}-rcapacity`}
+                    className={classes.capacitySlider}
+                    classes={classes}
+                    valueLabelDisplay="auto"
+                    step={1}
+                    min={selectedDatabaseTier.minCapacity}
+                    max={selectedDatabaseTier.maxCapacity}
+                    helperText="Each read unit represents an additional allowable 1000 transactions per second. Read capacity is measured on an rolling 15 second window."
+                  />
+                  <Slider
+                    field="write_units"
+                    label="Write Capacity"
+                    key={`${selectedDatabaseTier.id}-wcapacity`}
+                    className={classes.capacitySlider}
+                    classes={classes}
+                    valueLabelDisplay="auto"
+                    step={1}
+                    min={selectedDatabaseTier.minCapacity}
+                    max={selectedDatabaseTier.maxCapacity}
+                    helperText="Each write unit represents an additional allowable 1000 transactions per second. Write capacity is measured on an rolling 15 second window."
+                  />
+                </>
+              ) : null}
+            </div>
 
-        <TextField
-          className={classes.textfield}
-          classes={classes}
-          label="Database User Password"
-          required
-          field="password"
-          id="password"
-          type="password"
-          helperText="Create a password"
-        />
+            <div className={classes.secondSection}>
+              <TextField
+                required
+                className={classes.textfield}
+                classes={classes}
+                label="Database Name"
+                field="name"
+                id="name"
+                helperText="The database name must be unique within your account"
+                validate={validateExists}
+              />
+              <TextField
+                className={classes.textfield}
+                classes={classes}
+                label="Keyspace Name"
+                required
+                field="keyspace"
+                id="keyspace"
+                helperText="The keyspace holds your data"
+                validate={validateExists}
+              />
 
-        <TextField
-          className={classes.textfield}
-          classes={classes}
-          label="Confirm Password"
-          required
-          field="password_confirm"
-          id="password_confirm"
-          type="password"
-          helperText="Create a password"
-        />
-      </div>
+              <TextField
+                className={classes.textfield}
+                classes={classes}
+                label="Database User Name"
+                required
+                field="username"
+                id="username"
+                helperText="Create a database user"
+                validate={validateExists}
+              />
 
-      <div className={classes.buttonContainer}>
-        <Button type="submit">Launch Database</Button>
-      </div>
+              <TextField
+                className={classes.textfield}
+                classes={classes}
+                label="Database User Password"
+                required
+                field="password"
+                id="password"
+                type="password"
+                helperText="Create a password"
+                validate={validatePasswords}
+              />
+
+              <TextField
+                className={classes.textfield}
+                classes={classes}
+                label="Confirm Password"
+                required
+                field="password_confirm"
+                id="password_confirm"
+                type="password"
+                helperText="Create a password"
+                validate={validatePasswords}
+              />
+            </div>
+
+            <div className={classes.buttonContainer}>
+              {existingDB ? (
+                <>
+                  <Button
+                    size="large"
+                    variant="contained"
+                    color="primary"
+                    onClick={() => {
+                      navigateToNextStep();
+                    }}
+                  >
+                    Skip
+                  </Button>
+                  <Button
+                    size="large"
+                    variant="contained"
+                    color="primary"
+                    type="submit"
+                  >
+                    Update and Continue
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  size="large"
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                >
+                  Continue
+                </Button>
+              )}
+            </div>
+          </>
+        );
+      }}
     </Form>
   );
 }
 
-export default withStyles(theme => ({
+const DBInfoFormWithStyles = withStyles(theme => ({
   form: {
     display: 'grid',
     gridTemplateColumns: '[first] 5fr [second] 4fr [end]',
@@ -183,6 +319,10 @@ export default withStyles(theme => ({
   selectComponent: {
     marginRight: theme.spacing(6),
   },
+  capacitySlider: {
+    paddingRight: theme.spacing(6),
+    marginBottom: theme.spacing(3),
+  },
   textfield: {
     marginBottom: theme.spacing(6),
 
@@ -197,3 +337,42 @@ export default withStyles(theme => ({
     right: 0,
   },
 }))(props => <DBInfoForm {...props} />);
+
+/* Redux Logic */
+
+function mapStateToProps(state, ownProps) {
+  const existingDB = state.database.databases.find(
+    database => database.clientId === ownProps.clientId,
+  );
+
+  return {
+    existingDB,
+  };
+}
+
+function mapDispatchToProps(dispatch, ownProps) {
+  function create(databaseInfo) {
+    return dispatch(
+      databaseSlice.actions.createDatabaseDraft({
+        databaseInfo,
+        clientId: ownProps.clientId,
+      }),
+    );
+  }
+
+  function update(databaseInfo) {
+    return dispatch(
+      databaseSlice.actions.updateDatabaseDraft({
+        databaseInfo,
+        clientId: ownProps.clientId,
+      }),
+    );
+  }
+
+  return { create, update };
+}
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(props => <DBInfoFormWithStyles {...props} />);

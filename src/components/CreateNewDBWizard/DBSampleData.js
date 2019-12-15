@@ -7,6 +7,8 @@ import {
   Typography,
   CardActions,
 } from '@material-ui/core';
+import databaseSlice from '../../redux-store/database';
+import { connect } from 'react-redux';
 
 function SampleDataCard({ dataSample, classes = {}, onSelection, isSelected }) {
   return (
@@ -93,6 +95,7 @@ function DBSampleData({
   classes = {},
   navigateToNextStep,
   navigateToPreviousStep,
+  onSubmit,
 }) {
   const [selectedDataSample, setSelectedDataSample] = useState(null);
 
@@ -112,7 +115,9 @@ function DBSampleData({
             color="primary"
             disabled={!selectedDataSample}
             onClick={() => {
-              // TODO send redux dispatch
+              onSubmit({
+                sampleData: selectedDataSample,
+              });
 
               navigateToNextStep();
             }}
@@ -143,16 +148,16 @@ function DBSampleData({
   );
 }
 
-export default withStyles(theme => ({
+const DBSampleDataWithStyles = withStyles(theme => ({
   dataSampleList: {
     display: 'flex',
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-around',
     flexWrap: 'wrap',
     padding: theme.spacing(3),
   },
   card: {
-    flexBasis: '25rem',
+    flexBasis: '20rem',
     marginRight: theme.spacing(3),
     marginBottom: theme.spacing(3),
     backgroundColor: theme.palette.grey[50],
@@ -182,3 +187,35 @@ export default withStyles(theme => ({
     marginBottom: theme.spacing(3),
   },
 }))(props => <DBSampleData {...props} />);
+
+/* Redux Logic */
+
+function mapStateToProps(state, ownProps) {
+  const existingDB = state.database.databases.find(
+    database => database.clientId === ownProps.clientId,
+  );
+
+  return {
+    existingDB,
+  };
+}
+
+function mapDispatchToProps(dispatch, ownProps) {
+  function onSubmit(sampleData) {
+    return dispatch(
+      databaseSlice.actions.updateDatabaseDraft({
+        databaseInfo: {
+          sampleData,
+        },
+        clientId: ownProps.clientId,
+      }),
+    );
+  }
+
+  return { onSubmit };
+}
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(props => <DBSampleDataWithStyles {...props} />);
