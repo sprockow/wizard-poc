@@ -5,6 +5,7 @@ import theme from './theme';
 import { Match, Router, Link as ReachLink } from '@reach/router';
 import ActiveLink from './components/common/ActiveLink';
 import CreateNewDBWizard from './components/CreateNewDBWizard';
+import CssBaseline from '@material-ui/core/CssBaseline';
 
 import initializeStore from './redux-store';
 import DataStaxLogo from './datastax_logo.js';
@@ -53,6 +54,7 @@ const Main = withStyles(theme => ({
 function App() {
   return (
     <ThemeProvider theme={theme}>
+      <CssBaseline />
       <Provider store={initializeStore()}>
         <Router>
           <Main path="/">

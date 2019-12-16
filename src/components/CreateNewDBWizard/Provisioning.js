@@ -35,7 +35,8 @@ function Provisioning({
         <h2>'{existingDB.name}' is being provisioned...</h2>
         <p>
           This will take a few minutes depending on the size of the cluster and
-          the pre-populated data
+          the pre-populated data. You leave the page and check on the status
+          later.
         </p>
         <div className={classes.logs}>
           <p>...</p>

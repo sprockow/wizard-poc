@@ -97,10 +97,6 @@ function ConfirmDB({
 
 const ConfirmDBWithStyles = withStyles(theme => ({
   databaseInfo: {
-    display: 'grid',
-    gridTemplateColumns: '[first] 4fr [second] 4fr [end]',
-    gridTemplateRows: '[header] 1fr [info] 5fr [buttons] 1fr',
-
     padding: theme.spacing(3),
     margin: theme.spacing(3),
 
