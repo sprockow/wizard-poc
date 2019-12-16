@@ -56,12 +56,23 @@ function DBInfoForm({
   existingDB,
   create,
   update,
+  onCancel,
   classes = {},
 }) {
   const [selectedDatabaseTier, selectDatabaseTier] = useState(
     existingDB &&
       databaseTiers.find(tier => tier.id === existingDB.db_instance_type),
   );
+
+  if (existingDB && !existingDB.draft) {
+    onCancel();
+    return null;
+  }
+
+  if (existingDB && existingDB.provisioningInProcess) {
+    onCancel();
+    return null;
+  }
 
   return (
     <Form
@@ -275,7 +286,7 @@ const DBInfoFormWithStyles = withStyles(theme => ({
   form: {
     display: 'grid',
     gridTemplateColumns: '[first] 5fr [second] 4fr [end]',
-    gridTemplateRows: '[form] 5fr [buttons] 1fr',
+    gridTemplateRows: '[form] 4fr [buttons] 1fr',
   },
   firstSection: {
     gridColumnStart: 'first',
@@ -335,6 +346,10 @@ const DBInfoFormWithStyles = withStyles(theme => ({
   },
   textfield: {
     marginBottom: theme.spacing(6),
+
+    '&:last-child': {
+      marginBottom: 0,
+    },
 
     '& > label + div': {
       marginRight: theme.spacing(6),

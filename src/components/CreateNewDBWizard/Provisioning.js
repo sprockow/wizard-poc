@@ -20,8 +20,13 @@ function Provisioning({
   }
 
   if (existingDB && !existingDB.provisioningInProcess) {
-    setTimeout(() => navigateToPreviousStep());
-    return null;
+    if (existingDB.draft) {
+      setTimeout(() => navigateToPreviousStep());
+      return null;
+    } else {
+      onCancel();
+      return null;
+    }
   }
 
   return (

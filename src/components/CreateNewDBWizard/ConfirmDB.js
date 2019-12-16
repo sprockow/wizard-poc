@@ -18,10 +18,24 @@ function ConfirmDB({
   navigateToPreviousStep,
   launchDatabase,
   existingDB,
-  create,
-  update,
+  onCancel,
   classes = {},
 }) {
+  if (!existingDB) {
+    setTimeout(navigateToPreviousStep, 1);
+    return null;
+  }
+
+  if (existingDB && !existingDB.draft) {
+    onCancel();
+    return null;
+  }
+
+  if (existingDB && existingDB.provisioningInProcess) {
+    onCancel();
+    return null;
+  }
+
   return (
     <>
       <div className={classes.databaseInfo}>
@@ -69,7 +83,8 @@ function ConfirmDB({
             color="primary"
             onClick={() => {
               launchDatabase();
-              navigateToNextStep();
+              // redux action must first update state before we proceed to next step
+              setTimeout(navigateToNextStep, 1);
             }}
           >
             Launch Database

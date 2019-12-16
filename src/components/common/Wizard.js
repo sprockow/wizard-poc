@@ -48,7 +48,9 @@ function WizardStepContainer({
   let navigateToPreviousStep;
   if (currentIndex > 0) {
     navigateToPreviousStep = () => {
-      navigate(`${basePath}/${steps[currentIndex - 1].props.path}/`);
+      navigate(`${basePath}/${steps[currentIndex - 1].props.path}/`, {
+        replace: true,
+      });
     };
   } else {
     navigateToPreviousStep = onCancel;

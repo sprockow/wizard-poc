@@ -95,6 +95,11 @@ function Dashboard({ discardDraft, classes = {}, databases }) {
                 <div>Status</div>
                 <div></div>
               </div>
+              {databases.length === 0 ? (
+                <div className={classes.emptyTable}>
+                  <span>No Databases Yet Provisioned</span>
+                </div>
+              ) : null}
               {databases.map(database => (
                 <DatabaseTableRow
                   database={database}
@@ -145,6 +150,12 @@ const DashboardWithStyles = withStyles(theme => ({
         display: 'flex',
         alignItems: 'center',
       },
+    },
+  },
+  emptyTable: {
+    '& > span': {
+      gridColumnStart: 'span 6',
+      textAlign: 'center',
     },
   },
   tableHeader: {
