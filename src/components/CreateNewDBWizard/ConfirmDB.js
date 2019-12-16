@@ -83,8 +83,9 @@ function ConfirmDB({
             color="primary"
             onClick={() => {
               launchDatabase();
+
               // redux action must first update state before we proceed to next step
-              setTimeout(navigateToNextStep, 1);
+              setTimeout(navigateToNextStep, 30);
             }}
           >
             Launch Database

@@ -1,68 +1,67 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Application tour
 
-## Available Scripts
+This application provides a proof of concept on how a database launching  wizard could be built. 
 
-In the project directory, you can run:
+- The wizard should demonstrate that the wizard can be started and abandoned. 
+- You can navigate back and forward in the wizard
+- Once the database launch process is started, the wizard is complete, and you should not be abel to re-edit, or re-launch the database via the wizard
+- The launch process will happen in the background, and you should be able to start another database creation wizard during this time.
 
-### `npm start`
+A few things to be aware of:
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- The browser does not persist any information. Each hard refresh will remove all previously created dummy databases.
+- The proof of concept is probably not bullet proof, and if you try hard enough, I imagine you will be able to find bugs. You can always refresh if this happpens, and start the demo from scratch.
+- The demo doesn't provide any actions that allow you to interact with launched/operational databases (ie can't edit or tear-down)
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+## Library choices
 
-### `npm test`
+For this assignment I decided to use a few of the libraries/tools that I've used within past client engagements and personal projects. These choices have helped me get prototypes and proof of concepts up quickly before, and I believe they also have a lot of potential in larger scale projects.
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Create-React-App starter kit
 
-### `npm run build`
+This is an invaluable tool for getting started. I've certainly hit limits with this boilerplate, but its quite easy to extend its wepback and babel configurations. 
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Informed
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+Form libraries suffer from a common infliction of trying to provide too much UI out of the box. This ultimately causes problems where developers have to write lots configuration or workaround code to meet their own unique UI requirements. Informed is a great library that provides powerful form state management, but allows you to bring in your own UI libraries or custom code (for example, all of my form fields use Material UI. Take a look at the `common` folder to see examples on how I integrated material with informed)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Redux & Redux-Starter-Kit
 
-### `npm run eject`
+Redux has been my go-to choice for app-level state management. I love the tooling and community support for the library.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+I've recently started to use redux-starter-kit as a way of reducing the boilerplate necessary to quickly write new reducer/action functionality. It might not be the right choice for all projects, but it certainly is a great choice for prototypes.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+One opinionated is redux-starter-kit's use of proxy objects via Immer. It allows you to get around redux's requirement of immutable state by writing code that looks like it mutates objects. I'm generally not a fan of abstractions that obscure complexities via "magic", but one huge benefit to using immer is that it can track changes, and thus allow you to easily introduce rollback/reset functionality.
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Redux Saga
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+This is probably one of the most powerful libraries I've used. It was built as a middlware library for redux in order to extend it asynchronous capabilities, but I believe it represents an entirely new (*new for javascript, it is an old idea, and one that the Go language is natively includes) paradigm on how to tame complex asynchronous logical flows. 
 
-## Learn More
+This library was key in allowing us to launch a stable chat messaging app for Amazon, and is a library that I will always recommend for all but the simplest web apps.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+https://redux-saga.js.org/
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Material UI and JSS
 
-### Code Splitting
+I've only recently started to play with Material, but I like its sensible defaults for touch-friendly UI (large clickable targets). It has a (mostly) configurable theme that can be extended to match most brands.
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+### Reach Router
 
-### Analyzing the Bundle Size
+Before adopting React as my main framework of choice, I developed applications using Ember. This framework's main strength was its route-first approach to building applications. The main contributor to Reach-Router was coincidentally also an Ember developer, and has brought this route-frist appreciation to the React ecosystem. 
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
+What do I mean by route-first? Ensuring that your application tracks page navigations properly, and allows your user to go 'back', go 'forward' without incurring unintended side-effects and buggy behavior. 
 
-### Making a Progressive Web App
+This is the library on which I built my wizard logic. Building a wizard requires a few key pieces of information to be shared among the sub-components:
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
+- Every step needs to know the url path to the next and previous steps (if they exist). This way each step can automatically forward the user onto the next step, or at least present buttons to the user (ie 'go back', or 'skip')
 
-### Advanced Configuration
+- Every step must have a url path, which will allow for the browser to jump back to that step of the wizard when needed. This could happen via either a native 'back/forward' navigation, or via a hard refresh.
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
+- The root wizard component must be able to automatically redirect to the first step of wizard after initialization.
 
-### Deployment
+- Each step must be able to either bail out of the wizard entirely, or redirect the user to a previous step, if the current state is incomplete or invalid. For example, if a user launches a database via the wizard, and then hits back, we shouldn't allow them to go through the wizard again.
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
+The wizard.js component accomplishes this by introspecting its given children and building an array of 'steps'. It then rewrites the children output and passes down the step information along with some navigation utility functions.
 
-### `npm run build` fails to minify
+The pattern is very extensible, and is an example of a "headless" component (doesn't render any of its own UI). You could easily create a Wizard component that could be reused throughout an application.
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
