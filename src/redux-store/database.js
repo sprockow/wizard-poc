@@ -68,6 +68,20 @@ const slice = createSlice({
         newDatabase.provisioningInProcess = false;
       }
     },
+    discardDraft: (state, action) => {
+      const { clientId } = action.payload;
+
+      const databaseToDiscard = state.databases.find(
+        database => database.clientId === clientId,
+      );
+
+      if (databaseToDiscard && databaseToDiscard.draft) {
+        state.databases = state.databases.filter(
+          database => database !== databaseToDiscard,
+        );
+      }
+    },
+
     loadExistingDatabasesFromAccount: (state, action) => {
       const { databases } = action.payload;
       state.databases = databases.map(database => ({

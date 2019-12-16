@@ -4,8 +4,15 @@ import { Button, Menu, MenuItem } from '@material-ui/core';
 import { v4 as createId } from 'uuid';
 import { Match } from '@reach/router';
 import { connect } from 'react-redux';
+import databaseSlice from './redux-store/database';
 
-function DatabaseTableRow({ classes = {}, database, wizardPath, navigate }) {
+function DatabaseTableRow({
+  classes = {},
+  database,
+  wizardPath,
+  navigate,
+  discardDraft,
+}) {
   const [anchorEl, setAnchorEl] = React.useState(null);
 
   return (
@@ -29,47 +36,49 @@ function DatabaseTableRow({ classes = {}, database, wizardPath, navigate }) {
         <StatusLabel database={database} />
       </div>
       <div>
-        <Button
-          aria-controls="simple-menu"
-          aria-haspopup="true"
-          onClick={e => {
-            setAnchorEl(e.currentTarget);
-          }}
-        >
-          Actions
-        </Button>
-        <Menu
-          id={`${database.clientId}-actions`}
-          anchorEl={anchorEl}
-          keepMounted
-          open={Boolean(anchorEl)}
-          onClose={() => setAnchorEl(null)}
-        >
-          {database.draft ? (
-            <MenuItem
-              onClick={() => {
-                navigate(`${wizardPath}/${database.clientId}`);
-                setAnchorEl(null);
+        {database.draft ? (
+          <>
+            <Button
+              aria-controls="simple-menu"
+              aria-haspopup="true"
+              onClick={e => {
+                setAnchorEl(e.currentTarget);
               }}
             >
-              Continue Editing Draft
-            </MenuItem>
-          ) : null}
-          <MenuItem
-            onClick={() => {
-              //dispatch Discard
-              setAnchorEl(null);
-            }}
-          >
-            Discard
-          </MenuItem>
-        </Menu>
+              Actions
+            </Button>
+            <Menu
+              id={`${database.clientId}-actions`}
+              anchorEl={anchorEl}
+              keepMounted
+              open={Boolean(anchorEl)}
+              onClose={() => setAnchorEl(null)}
+            >
+              <MenuItem
+                onClick={() => {
+                  navigate(`${wizardPath}/${database.clientId}`);
+                  setAnchorEl(null);
+                }}
+              >
+                Continue Editing Draft
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  discardDraft({ database });
+                  setAnchorEl(null);
+                }}
+              >
+                Discard
+              </MenuItem>
+            </Menu>
+          </>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function Dashboard({ classes = {}, databases }) {
+function Dashboard({ discardDraft, classes = {}, databases }) {
   return (
     <>
       <Match path="./*">
@@ -92,6 +101,7 @@ function Dashboard({ classes = {}, databases }) {
                   key={database.clientId}
                   wizardPath="new"
                   navigate={navigate}
+                  discardDraft={discardDraft}
                 />
               ))}
             </div>
@@ -149,6 +159,17 @@ function mapStateToProps(state) {
   };
 }
 
-export default connect(mapStateToProps)(props => (
-  <DashboardWithStyles {...props} />
-));
+function mapDispatchToProps(dispatch) {
+  function discardDraft({ database }) {
+    dispatch(
+      databaseSlice.actions.discardDraft({ clientId: database.clientId }),
+    );
+  }
+
+  return { discardDraft };
+}
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(props => <DashboardWithStyles {...props} />);
