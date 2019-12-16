@@ -1,4 +1,6 @@
 import { createSlice } from 'redux-starter-kit';
+import { put, take, delay, spawn } from 'redux-saga/effects';
+import { v4 as createId } from 'uuid';
 
 const slice = createSlice({
   name: 'database',
@@ -29,7 +31,7 @@ const slice = createSlice({
         Object.assign(newDatabase, databaseInfo);
       }
     },
-    markDatabaseDraftAsInProgress: (state, action) => {
+    requestDatabaseProvisioning: (state, action) => {
       const { clientId } = action.payload;
 
       const newDatabase = state.databases.find(
@@ -42,8 +44,19 @@ const slice = createSlice({
         newDatabase.provisioningLogs = [];
       }
     },
+    updateProvisioningLogs: (state, action) => {
+      const { clientId, log } = action.payload;
+
+      const newDatabase = state.databases.find(
+        database => database.clientId === clientId,
+      );
+
+      if (newDatabase) {
+        newDatabase.provisioningLogs.push(log);
+      }
+    },
     markDatabaseAsProvisioned: (state, action) => {
-      const { clientId } = action.payload;
+      const { clientId, id } = action.payload;
 
       const newDatabase = state.databases.find(
         database => database.clientId === clientId,
@@ -51,14 +64,80 @@ const slice = createSlice({
 
       if (newDatabase) {
         newDatabase.draft = false;
+        newDatabase.id = id;
         newDatabase.provisioningInProcess = false;
       }
     },
     loadExistingDatabasesFromAccount: (state, action) => {
       const { databases } = action.payload;
-      state.databases = databases;
+      state.databases = databases.map(database => ({
+        ...database,
+        id: database.clientId,
+      }));
     },
   },
 });
+
+export function* waitForDatabaseProvisioningRequests() {
+  while (true) {
+    const {
+      payload: { clientId },
+    } = yield take(slice.actions.requestDatabaseProvisioning.type);
+
+    yield delay(1000);
+
+    yield put(
+      slice.actions.updateProvisioningLogs({
+        clientId,
+        log: 'Provisioning started...',
+      }),
+    );
+
+    yield delay(2000);
+
+    yield put(
+      slice.actions.updateProvisioningLogs({
+        clientId,
+        log: '1st cluster online',
+      }),
+    );
+
+    yield delay(2000);
+
+    yield put(
+      slice.actions.updateProvisioningLogs({
+        clientId,
+        log: '2nd cluster online',
+      }),
+    );
+
+    yield delay(2000);
+
+    yield put(
+      slice.actions.updateProvisioningLogs({
+        clientId,
+        log: 'User provisioned',
+      }),
+    );
+
+    yield delay(2000);
+
+    yield put(
+      slice.actions.updateProvisioningLogs({
+        clientId,
+        log: 'Assigning network capacity',
+      }),
+    );
+
+    yield delay(4000);
+
+    yield put(
+      slice.actions.markDatabaseAsProvisioned({
+        clientId,
+        id: createId(),
+      }),
+    );
+  }
+}
 
 export default slice;

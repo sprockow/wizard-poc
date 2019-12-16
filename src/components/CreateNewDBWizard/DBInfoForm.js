@@ -69,10 +69,18 @@ function DBInfoForm({
       autoComplete="off"
       className={classes.form}
       onSubmit={formState => {
+        const selectedTier = databaseTiers.find(
+          tier => tier.id === formState.db_instance_type,
+        );
+        const dbInfo = {
+          ...formState,
+          selectedTier,
+        };
+
         if (existingDB) {
-          update(formState);
+          update(dbInfo);
         } else {
-          create(formState);
+          create(dbInfo);
         }
         navigateToNextStep && navigateToNextStep();
       }}
@@ -230,8 +238,6 @@ function DBInfoForm({
                 <>
                   <Button
                     size="large"
-                    variant="contained"
-                    color="primary"
                     onClick={() => {
                       navigateToNextStep();
                     }}
@@ -309,6 +315,10 @@ const DBInfoFormWithStyles = withStyles(theme => ({
     display: 'flex',
     justifyContent: 'flex-end',
     padding: theme.spacing(6),
+
+    '& > button': {
+      marginRight: theme.spacing(3),
+    },
   },
   dbInstanceRadioGroup: {
     marginBottom: theme.spacing(6),

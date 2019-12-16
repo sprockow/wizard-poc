@@ -1,5 +1,5 @@
-import React from 'react';
-import { Router, Match, Redirect, Link as ReachLink } from '@reach/router';
+import React, { useState } from 'react';
+import { Router, Match, Redirect } from '@reach/router';
 
 /* This is a utility function that will ignore react fragments (ie <></>) in order to get the "real" children */
 function _recursivelyGetChildren(children) {
@@ -30,6 +30,8 @@ function WizardStepContainer({
   steps,
   basePath,
   navigate,
+  onComplete,
+  onCancel,
   classes = {},
 }) {
   const currentIndex = steps.indexOf(step);
@@ -39,6 +41,8 @@ function WizardStepContainer({
   if (currentIndex < steps.length - 1) {
     navigateToNextStep = () =>
       navigate(`${basePath}/${steps[currentIndex + 1].props.path}/`);
+  } else {
+    navigateToNextStep = onComplete;
   }
 
   let navigateToPreviousStep;
@@ -46,6 +50,8 @@ function WizardStepContainer({
     navigateToPreviousStep = () => {
       navigate(`${basePath}/${steps[currentIndex - 1].props.path}/`);
     };
+  } else {
+    navigateToPreviousStep = onCancel;
   }
 
   return (
@@ -54,6 +60,8 @@ function WizardStepContainer({
         navigateToPreviousStep,
         navigateToNextStep,
         NextStepLink,
+        onComplete,
+        onCancel,
       })}
     </>
   );
@@ -61,32 +69,43 @@ function WizardStepContainer({
 
 export const WizardStep = ({ children }) => children;
 
-export function Wizard({ children }) {
+export function Wizard({ children, basePath }) {
   const steps = _recursivelyGetChildren(children);
+
+  const [isCancelling, cancel] = useState(false);
+  const [isCompleting, complete] = useState(false);
 
   return (
     <Match path="./*">
-      {({ match, navigate }) => (
-        <Router>
-          <WizardContainer path="/">
-            {steps.map(step => (
-              <WizardStepContainer
-                path={step.props.path}
-                key={step.props.path}
-                step={step}
-                steps={steps}
-                basePath={match.uri}
-                navigate={navigate}
+      {({ match, navigate }) => {
+        if (isCancelling || isCompleting) {
+          return <Redirect to={basePath} noThrow />;
+        }
+
+        return (
+          <Router>
+            <WizardContainer path="/">
+              {steps.map(step => (
+                <WizardStepContainer
+                  path={step.props.path}
+                  key={step.props.path}
+                  onComplete={() => complete(true)}
+                  onCancel={() => cancel(true)}
+                  step={step}
+                  steps={steps}
+                  basePath={match.uri}
+                  navigate={navigate}
+                />
+              ))}
+              <Redirect
+                from="/"
+                to={`${match.uri}/${steps[0].props.path}`}
+                noThrow
               />
-            ))}
-            <Redirect
-              from="/"
-              to={`${match.uri}/${steps[0].props.path}`}
-              noThrow
-            />
-          </WizardContainer>
-        </Router>
-      )}
+            </WizardContainer>
+          </Router>
+        );
+      }}
     </Match>
   );
 }

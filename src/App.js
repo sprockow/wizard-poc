@@ -1,65 +1,64 @@
 import React from 'react';
-import { ThemeProvider } from '@material-ui/styles';
+import { ThemeProvider, withStyles } from '@material-ui/styles';
 import { Provider } from 'react-redux';
 import theme from './theme';
 import { Match, Router, Link as ReachLink } from '@reach/router';
 import ActiveLink from './components/common/ActiveLink';
 import CreateNewDBWizard from './components/CreateNewDBWizard';
-import { Button } from '@material-ui/core';
-import { v4 as createId } from 'uuid';
+
 import initializeStore from './redux-store';
+import DataStaxLogo from './datastax_logo.js';
 
-function Dashboard() {
-  return (
-    <>
-      <Match path="./*">
-        {({ match, navigate }) => (
-          <>
-            <h1>Dashboard</h1>
-            <Button
-              onClick={() => {
-                // Create a unique id for the new draft database
-                navigate(`/new/${createId()}`);
-              }}
-            >
-              Create New Database
-            </Button>
-          </>
-        )}
-      </Match>
-    </>
-  );
-}
+import Dashboard from './Dashboard';
 
-function BreadCrumbs({ children }) {
-  return (
-    <>
-      <div>
-        <h2>
-          <ActiveLink component={ReachLink} to="/">
-            Dashboard
-          </ActiveLink>{' '}
-          <Match path="new/*">
-            {({ match }) => {
-              return match ? '> Create new Dashboard' : null;
-            }}
-          </Match>
-        </h2>
-      </div>
-      {children}
-    </>
-  );
-}
+const Main = withStyles(theme => ({
+  header: {
+    padding: theme.spacing(3),
+    borderBottomColor: theme.palette.primary.light,
+    borderBottomWidth: '1px',
+    borderBottomStyle: 'solid',
+  },
+  logo: {
+    width: '15rem',
+    height: '4rem',
+  },
+  nav: {
+    paddingLeft: theme.spacing(3),
+  },
+  content: {
+    paddingLeft: theme.spacing(6),
+    maxWidth: '90rem',
+  },
+}))(({ classes, children }) => (
+  <>
+    <header className={classes.header}>
+      <DataStaxLogo className={classes.logo} />
+    </header>
+    <nav className={classes.nav}>
+      <h2>
+        <ActiveLink component={ReachLink} to="/">
+          Dashboard
+        </ActiveLink>{' '}
+        <Match path="new/*">
+          {({ match }) => {
+            return match ? '> Create new Dashboard' : null;
+          }}
+        </Match>
+      </h2>
+    </nav>
+    <div className={classes.content}> {children}</div>
+  </>
+));
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <Provider store={initializeStore()}>
         <Router>
-          <BreadCrumbs path="/">
+          <Main path="/">
             <Dashboard path="/" />
             <CreateNewDBWizard path="/new/:clientId/*" />
-          </BreadCrumbs>
+          </Main>
         </Router>
       </Provider>
     </ThemeProvider>

@@ -31,7 +31,7 @@ function SampleDataCard({ dataSample, classes = {}, onSelection, isSelected }) {
         </Typography>
       </CardContent>
       <CardActions className={classes.cardButtonContainer}>
-        <Button size="small" onClick={onSelection}>
+        <Button disabled={isSelected} size="small" onClick={onSelection}>
           Select
         </Button>
       </CardActions>
@@ -96,9 +96,16 @@ function DBSampleData({
   navigateToNextStep,
   navigateToPreviousStep,
   onSubmit,
+  existingDB,
 }) {
-  const [selectedDataSample, setSelectedDataSample] = useState(null);
+  const [selectedDataSample, setSelectedDataSample] = useState(
+    existingDB && existingDB.sampleData,
+  );
 
+  if (!existingDB) {
+    setTimeout(navigateToPreviousStep, 1);
+    return null;
+  }
   return (
     <>
       <div>
@@ -115,9 +122,7 @@ function DBSampleData({
             color="primary"
             disabled={!selectedDataSample}
             onClick={() => {
-              onSubmit({
-                sampleData: selectedDataSample,
-              });
+              onSubmit(selectedDataSample);
 
               navigateToNextStep();
             }}
